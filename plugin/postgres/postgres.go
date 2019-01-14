@@ -12,7 +12,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/mattn/davfs"
+	"github.com/nkonev/davfs"
 	"golang.org/x/net/context"
 	"golang.org/x/net/webdav"
 )

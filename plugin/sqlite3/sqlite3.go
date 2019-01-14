@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mattn/davfs"
+	"github.com/nkonev/davfs"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/context"
 	"golang.org/x/net/webdav"

@@ -11,12 +11,12 @@ import (
 	"github.com/fatih/color"
 	"github.com/mattn/go-colorable"
 
-	"github.com/mattn/davfs"
-	_ "github.com/mattn/davfs/plugin/file"
-	_ "github.com/mattn/davfs/plugin/memory"
-	_ "github.com/mattn/davfs/plugin/mysql"
-	_ "github.com/mattn/davfs/plugin/postgres"
-	_ "github.com/mattn/davfs/plugin/sqlite3"
+	"github.com/nkonev/davfs"
+	_ "github.com/nkonev/davfs/plugin/file"
+	_ "github.com/nkonev/davfs/plugin/memory"
+	_ "github.com/nkonev/davfs/plugin/mysql"
+	_ "github.com/nkonev/davfs/plugin/postgres"
+	_ "github.com/nkonev/davfs/plugin/sqlite3"
 	"golang.org/x/net/webdav"
 )
 

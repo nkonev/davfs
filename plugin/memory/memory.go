@@ -1,7 +1,7 @@
 package memory
 
 import (
-	"github.com/mattn/davfs"
+	"github.com/nkonev/davfs"
 	"golang.org/x/net/webdav"
 )
 

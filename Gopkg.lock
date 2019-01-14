@@ -29,21 +29,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:91152d03cb34f9292d88c633983bcda9a1feb17360716622dd1c9aead70107c4"
-  name = "github.com/mattn/davfs"
-  packages = [
-    ".",
-    "plugin/file",
-    "plugin/memory",
-    "plugin/mysql",
-    "plugin/postgres",
-    "plugin/sqlite3",
-  ]
-  pruneopts = "UT"
-  revision = "6226fb014c1f7bf08b120d86fb8f288cb1efddd6"
-
-[[projects]]
   digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
   name = "github.com/mattn/go-colorable"
   packages = ["."]
@@ -102,12 +87,6 @@
     "github.com/fatih/color",
     "github.com/go-sql-driver/mysql",
     "github.com/lib/pq",
-    "github.com/mattn/davfs",
-    "github.com/mattn/davfs/plugin/file",
-    "github.com/mattn/davfs/plugin/memory",
-    "github.com/mattn/davfs/plugin/mysql",
-    "github.com/mattn/davfs/plugin/postgres",
-    "github.com/mattn/davfs/plugin/sqlite3",
     "github.com/mattn/go-colorable",
     "github.com/mattn/go-sqlite3",
     "golang.org/x/net/context",
