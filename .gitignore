@@ -1,0 +1,6 @@
+!.gitignore
+davfs
+.project
+.idea
+*.iml
+vendor
