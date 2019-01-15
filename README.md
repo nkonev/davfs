@@ -47,6 +47,7 @@ $ davfs -driver=memory -cred=user:password
 
 MIT
 
-## Author
+## Authors
 
-Yasuhiro Matsumoto (a.k.a mattn)
+* Yasuhiro Matsumoto (a.k.a mattn)
+* Nikita Konev (a.k.a nkonev)
