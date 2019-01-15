@@ -7,10 +7,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-
-	"github.com/fatih/color"
-	"github.com/mattn/go-colorable"
-
 	"github.com/nkonev/davfs"
 	_ "github.com/nkonev/davfs/plugin/file"
 	_ "github.com/nkonev/davfs/plugin/memory"
@@ -38,7 +34,7 @@ func errorString(err error) string {
 func main() {
 	flag.Parse()
 
-	log.SetOutput(colorable.NewColorableStderr())
+	log.SetOutput(os.Stdout)
 
 	if *create {
 		err := davfs.CreateFS(*driver, *source)
@@ -67,16 +63,12 @@ func main() {
 				if u, err := url.Parse(r.Header.Get("Destination")); err == nil {
 					dst = u.Path
 				}
-				log.Printf("%-18s %s %s %s",
-					color.GreenString(r.Method),
+				log.Printf("%s %s",
 					r.URL.Path,
-					dst,
-					color.RedString(errorString(err)))
+					dst,)
 			default:
-				log.Printf("%-18s %s %s",
-					color.GreenString(r.Method),
-					r.URL.Path,
-					color.RedString(errorString(err)))
+				log.Printf("%s",
+					r.URL.Path, )
 			}
 		},
 	}
@@ -102,7 +94,7 @@ func main() {
 		handler = dav
 	}
 
-	log.Print(color.CyanString("Server started %v", *addr))
+	log.Printf("Server started %v", *addr)
 	http.Handle("/", handler)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
