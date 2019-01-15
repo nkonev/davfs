@@ -4,8 +4,8 @@ WebDAV filesystem
 
 ## Building
 ```
-rm -rf build
-go build -o build/davfs ./cmd/davfs/davfs.go
+$ rm -rf build
+$ go build -o build/davfs ./cmd/davfs/davfs.go
 ```
 
 ## Usage
