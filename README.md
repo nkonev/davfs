@@ -1,6 +1,6 @@
 # davfs
 
-WebDAV filesystem
+WebDAV filesystem server
 
 ## Building
 ```
