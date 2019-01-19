@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nkonev/davfs"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/nkonev/davfs"
 	"golang.org/x/net/context"
 	"golang.org/x/net/webdav"
 )
@@ -36,7 +36,7 @@ func init() {
 type Driver struct {
 }
 
-type FileSystem struct {
+type Sqlite3FileSystem struct {
 	db    *sql.DB
 	mu    sync.Mutex
 	Debug bool
@@ -50,7 +50,7 @@ type FileInfo struct {
 }
 
 type File struct {
-	fs       *FileSystem
+	fs       *Sqlite3FileSystem
 	name     string
 	off      int64
 	children []os.FileInfo
@@ -61,7 +61,7 @@ func (d *Driver) Mount(source string) (webdav.FileSystem, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &FileSystem{db: db}, nil
+	return &Sqlite3FileSystem{db: db}, nil
 }
 
 func (d *Driver) CreateFS(source string) error {
@@ -89,12 +89,12 @@ func clearName(name string) (string, error) {
 	return name, nil
 }
 
-func (fs *FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
+func (fs *Sqlite3FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.Mkdir %v", name)
+		log.Printf("Sqlite3FileSystem.Mkdir %v", name)
 	}
 
 	if !strings.HasSuffix(name, "/") {
@@ -126,12 +126,12 @@ func (fs *FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) 
 	return nil
 }
 
-func (fs *FileSystem) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
+func (fs *Sqlite3FileSystem) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.OpenFile %v", name)
+		log.Printf("Sqlite3FileSystem.OpenFile %v", name)
 	}
 
 	var err error
@@ -174,7 +174,7 @@ func (fs *FileSystem) OpenFile(ctx context.Context, name string, flag int, perm 
 	return &File{fs, name, 0, nil}, nil
 }
 
-func (fs *FileSystem) removeAll(name string) error {
+func (fs *Sqlite3FileSystem) removeAll(name string) error {
 	var err error
 	if name, err = clearName(name); err != nil {
 		return err
@@ -193,23 +193,23 @@ func (fs *FileSystem) removeAll(name string) error {
 	return err
 }
 
-func (fs *FileSystem) RemoveAll(ctx context.Context, name string) error {
+func (fs *Sqlite3FileSystem) RemoveAll(ctx context.Context, name string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.RemoveAll %v", name)
+		log.Printf("Sqlite3FileSystem.RemoveAll %v", name)
 	}
 
 	return fs.removeAll(name)
 }
 
-func (fs *FileSystem) Rename(ctx context.Context, oldName, newName string) error {
+func (fs *Sqlite3FileSystem) Rename(ctx context.Context, oldName, newName string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.Rename %v %v", oldName, newName)
+		log.Printf("Sqlite3FileSystem.Rename %v %v", oldName, newName)
 	}
 
 	var err error
@@ -238,7 +238,7 @@ func (fs *FileSystem) Rename(ctx context.Context, oldName, newName string) error
 	return err
 }
 
-func (fs *FileSystem) stat(name string) (os.FileInfo, error) {
+func (fs *Sqlite3FileSystem) stat(name string) (os.FileInfo, error) {
 	var err error
 	if name, err = clearName(name); err != nil {
 		return nil, err
@@ -275,12 +275,12 @@ func (fs *FileSystem) stat(name string) (os.FileInfo, error) {
 	return &fi, nil
 }
 
-func (fs *FileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) {
+func (fs *Sqlite3FileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.Stat %v", name)
+		log.Printf("Sqlite3FileSystem.Stat %v", name)
 	}
 
 	return fs.stat(name)

@@ -38,7 +38,7 @@ func init() {
 type Driver struct {
 }
 
-type FileSystem struct {
+type MySqlFileSystem struct {
 	db    *sql.DB
 	mu    sync.Mutex
 	Debug bool
@@ -59,7 +59,7 @@ func (fi *FileInfo) IsDir() bool        { return fi.mode.IsDir() }
 func (fi *FileInfo) Sys() interface{}   { return nil }
 
 type File struct {
-	fs       *FileSystem
+	fs       *MySqlFileSystem
 	name     string
 	off      int64
 	children []os.FileInfo
@@ -70,7 +70,7 @@ func (d *Driver) Mount(source string) (webdav.FileSystem, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &FileSystem{db: db, Debug: true}, nil
+	return &MySqlFileSystem{db: db, Debug: true}, nil
 }
 
 func (d *Driver) CreateFS(source string) error {
@@ -102,12 +102,12 @@ func clearName(name string) (string, error) {
 	return name, nil
 }
 
-func (fs *FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
+func (fs *MySqlFileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.Mkdir %v", name)
+		log.Printf("MySqlFileSystem.Mkdir %v", name)
 	}
 
 	if !strings.HasSuffix(name, "/") {
@@ -139,12 +139,12 @@ func (fs *FileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) 
 	return nil
 }
 
-func (fs *FileSystem) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
+func (fs *MySqlFileSystem) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.OpenFile %v", name)
+		log.Printf("MySqlFileSystem.OpenFile %v", name)
 	}
 
 	var err error
@@ -187,7 +187,7 @@ func (fs *FileSystem) OpenFile(ctx context.Context, name string, flag int, perm 
 	return &File{fs, name, 0, nil}, nil
 }
 
-func (fs *FileSystem) removeAll(name string) error {
+func (fs *MySqlFileSystem) removeAll(name string) error {
 	var err error
 	if name, err = clearName(name); err != nil {
 		return err
@@ -206,23 +206,23 @@ func (fs *FileSystem) removeAll(name string) error {
 	return err
 }
 
-func (fs *FileSystem) RemoveAll(ctx context.Context, name string) error {
+func (fs *MySqlFileSystem) RemoveAll(ctx context.Context, name string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.RemoveAll %v", name)
+		log.Printf("MySqlFileSystem.RemoveAll %v", name)
 	}
 
 	return fs.removeAll(name)
 }
 
-func (fs *FileSystem) Rename(ctx context.Context, oldName, newName string) error {
+func (fs *MySqlFileSystem) Rename(ctx context.Context, oldName, newName string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.Rename %v %v", oldName, newName)
+		log.Printf("MySqlFileSystem.Rename %v %v", oldName, newName)
 	}
 
 	var err error
@@ -251,7 +251,7 @@ func (fs *FileSystem) Rename(ctx context.Context, oldName, newName string) error
 	return err
 }
 
-func (fs *FileSystem) stat(name string) (os.FileInfo, error) {
+func (fs *MySqlFileSystem) stat(name string) (os.FileInfo, error) {
 	var err error
 	if name, err = clearName(name); err != nil {
 		return nil, err
@@ -289,12 +289,12 @@ func (fs *FileSystem) stat(name string) (os.FileInfo, error) {
 	return &fi, nil
 }
 
-func (fs *FileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) {
+func (fs *MySqlFileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("FileSystem.Stat %v", name)
+		log.Printf("MySqlFileSystem.Stat %v", name)
 	}
 
 	return fs.stat(name)
