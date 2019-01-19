@@ -123,10 +123,12 @@ func TestGetCredSuccess(t *testing.T) {
 
 func TestClientCreateDir(t *testing.T) {
 	for i := 0; i < 100; i++ {
+		port := "9998"
+
 		user := "user"
 		password := "password"
 
-		driver, source, cred, create, addr := driver, source, user+":"+password, create, ":9998"
+		driver, source, cred, create, addr := driver, source, user+":"+password, create, ":"+port
 
 		handler, e := createServer(&driver, &source, &cred, &create)
 		assert.Nil(t, e)
@@ -134,7 +136,7 @@ func TestClientCreateDir(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		srv := runServer(&addr, handler)
 
-		uri := "http://localhost:9998"
+		uri := "http://localhost:" + port
 
 		c := gowebdav.NewClient(uri, user, password)
 		_ = c.Connect() // performs authorization
