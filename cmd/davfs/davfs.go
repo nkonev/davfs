@@ -1,12 +1,8 @@
 package main
 
 import (
+	"errors"
 	"flag"
-	"log"
-	"net/http"
-	"net/url"
-	"os"
-	"strings"
 	"github.com/nkonev/davfs"
 	_ "github.com/nkonev/davfs/plugin/file"
 	_ "github.com/nkonev/davfs/plugin/memory"
@@ -14,25 +10,32 @@ import (
 	_ "github.com/nkonev/davfs/plugin/postgres"
 	_ "github.com/nkonev/davfs/plugin/sqlite3"
 	"golang.org/x/net/webdav"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
 )
-
-var (
-	addr   = flag.String("addr", ":9999", "server address")
-	driver = flag.String("driver", "file", "database driver")
-	source = flag.String("source", ".", "database connection string")
-	cred   = flag.String("cred", "", "credential for basic auth")
-	create = flag.Bool("create", false, "create filesystem")
-)
-
-func errorString(err error) string {
-	if err != nil {
-		return err.Error()
-	}
-	return ""
-}
 
 func main() {
+	var (
+		addr   = flag.String("addr", ":9999", "server address")
+		driver = flag.String("driver", "file", "database driver")
+		source = flag.String("source", ".", "database connection string")
+		cred   = flag.String("cred", "", "credential for basic auth")
+		create = flag.Bool("create", false, "create filesystem")
+	)
 	flag.Parse()
+
+	if handler, e := createServer(driver, source, cred, create); e != nil {
+		panic(e)
+	} else {
+		runServer(addr, handler)
+	}
+}
+
+
+func createServer(driver, source, cred *string, create *bool) (http.Handler, error) {
 
 	log.SetOutput(os.Stdout)
 
@@ -52,23 +55,15 @@ func main() {
 		FileSystem: fs,
 		LockSystem: webdav.NewMemLS(),
 		Logger: func(r *http.Request, err error) {
-			litmus := r.Header.Get("X-Litmus")
-			if len(litmus) > 19 {
-				litmus = litmus[:16] + "..."
-			}
-
 			switch r.Method {
 			case "COPY", "MOVE":
 				dst := ""
 				if u, err := url.Parse(r.Header.Get("Destination")); err == nil {
 					dst = u.Path
 				}
-				log.Printf("%s %s",
-					r.URL.Path,
-					dst,)
+				log.Printf("%s %s", r.URL.Path, dst)
 			default:
-				log.Printf("%s",
-					r.URL.Path, )
+				log.Printf("%s", r.URL.Path)
 			}
 		},
 	}
@@ -78,7 +73,7 @@ func main() {
 		token := strings.SplitN(*cred, ":", 2)
 		if len(token) != 2 {
 			flag.Usage()
-			return
+			return nil, errors.New("Cannot parse credentials from commandline")
 		}
 		user, pass := token[0], token[1]
 		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -93,8 +88,11 @@ func main() {
 	} else {
 		handler = dav
 	}
+	return handler, nil
+}
 
-	log.Printf("Server started %v", *addr)
+func runServer(addr *string, handler http.Handler){
 	http.Handle("/", handler)
+	log.Printf("Server will started %v", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
