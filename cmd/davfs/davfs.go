@@ -101,7 +101,7 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 			username, password, ok := r.BasicAuth()
 			if !ok || username != user || password != pass {
 				w.Header().Set("WWW-Authenticate", `Basic realm="davfs"`)
-				log.Printf("Bad authorization for user='%s'\n", username)
+				log.Printf("authorization failed for user='%s'\n", username)
 				http.Error(w, "authorization failed", http.StatusUnauthorized)
 				return
 			}
@@ -116,8 +116,10 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 func runServer(addr *string, handler http.Handler) *http.Server {
 	log.Printf("Server will started %v", *addr)
 
-	srv := &http.Server{Addr: *addr}
-	http.Handle("/", handler)
+	mux := http.NewServeMux()
+	mux.Handle("/", handler)
+
+	srv := &http.Server{Addr: *addr, Handler: mux}
 
 	go func() {
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {

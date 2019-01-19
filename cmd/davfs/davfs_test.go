@@ -122,26 +122,26 @@ func TestGetCredSuccess(t *testing.T) {
 }
 
 func TestClientCreateDir(t *testing.T) {
-	//for i := 0; i < 100; i++{
-	user := "user"
-	password := "password"
+	for i := 0; i < 100; i++ {
+		user := "user"
+		password := "password"
 
-	driver, source, cred, create, addr := driver, source, user+":"+password, create, ":9998"
+		driver, source, cred, create, addr := driver, source, user+":"+password, create, ":9998"
 
-	handler, e := createServer(&driver, &source, &cred, &create)
-	assert.Nil(t, e)
+		handler, e := createServer(&driver, &source, &cred, &create)
+		assert.Nil(t, e)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	srv := runServer(&addr, handler)
-	defer srv.Shutdown(ctx)
-	defer cancel()
+		ctx, cancel := context.WithCancel(context.Background())
+		srv := runServer(&addr, handler)
 
-	uri := "http://localhost:9998"
+		uri := "http://localhost:9998"
 
-	c := gowebdav.NewClient(uri, user, password)
-	_ = c.Connect() // performs authorization
-	err := c.Mkdir("folder", 0644)
-	assert.Nil(t, err, "Got error %v", err)
+		c := gowebdav.NewClient(uri, user, password)
+		_ = c.Connect() // performs authorization
+		err := c.Mkdir("folder", 0644)
+		assert.Nil(t, err, "Got error %v", err)
 
-	//}
+		srv.Shutdown(ctx)
+		cancel()
+	}
 }
