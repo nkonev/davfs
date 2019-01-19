@@ -34,7 +34,6 @@ func main() {
 	}
 }
 
-
 func createServer(driver, source, cred *string, create *bool) (http.Handler, error) {
 
 	log.SetOutput(os.Stdout)
@@ -61,9 +60,9 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 				if u, err := url.Parse(r.Header.Get("Destination")); err == nil {
 					dst = u.Path
 				}
-				log.Printf("%s %s", r.URL.Path, dst)
+				log.Printf("%s %s %s", r.Method, r.URL.Path, dst)
 			default:
-				log.Printf("%s", r.URL.Path)
+				log.Printf("%s %s", r.Method, r.URL.Path)
 			}
 		},
 	}
@@ -91,7 +90,7 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 	return handler, nil
 }
 
-func runServer(addr *string, handler http.Handler){
+func runServer(addr *string, handler http.Handler) {
 	http.Handle("/", handler)
 	log.Printf("Server will started %v", *addr)
 	log.Fatal(http.ListenAndServe(*addr, nil))
