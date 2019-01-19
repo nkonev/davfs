@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/studio-b12/gowebdav"
 	"io/ioutil"
 	test "net/http/httptest"
 	"strings"
@@ -117,4 +119,29 @@ func TestGetCredSuccess(t *testing.T) {
 	fmt.Println(resp.Header.Get("Content-Type"))
 	fmt.Println(string(body))
 	assert.Equal(t, 207, resp.StatusCode)
+}
+
+func TestClientCreateDir(t *testing.T) {
+	//for i := 0; i < 100; i++{
+	user := "user"
+	password := "password"
+
+	driver, source, cred, create, addr := driver, source, user+":"+password, create, ":9998"
+
+	handler, e := createServer(&driver, &source, &cred, &create)
+	assert.Nil(t, e)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	srv := runServer(&addr, handler)
+	defer srv.Shutdown(ctx)
+	defer cancel()
+
+	uri := "http://localhost:9998"
+
+	c := gowebdav.NewClient(uri, user, password)
+	_ = c.Connect() // performs authorization
+	err := c.Mkdir("folder", 0644)
+	assert.Nil(t, err, "Got error %v", err)
+
+	//}
 }

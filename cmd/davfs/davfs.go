@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"github.com/nkonev/davfs"
@@ -14,7 +15,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -27,11 +30,30 @@ func main() {
 	)
 	flag.Parse()
 
+	var srv *http.Server
 	if handler, e := createServer(driver, source, cred, create); e != nil {
 		panic(e)
 	} else {
-		runServer(addr, handler)
+		srv = runServer(addr, handler)
 	}
+
+	shutdownTimeout, _ := time.ParseDuration("10s")
+
+	log.Println("Server started. Waiting for interrupt (2) (Ctrl+C)")
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 10 seconds.
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Printf("Got signal %v - will forcibly close after %v\n", os.Interrupt, shutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel() // releases resources if slowOperation completes before timeout elapses
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal(err)
+	} else {
+		log.Println("Server successfully shut down")
+	}
+
 }
 
 func createServer(driver, source, cred *string, create *bool) (http.Handler, error) {
@@ -60,9 +82,9 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 				if u, err := url.Parse(r.Header.Get("Destination")); err == nil {
 					dst = u.Path
 				}
-				log.Printf("%s %s %s", r.Method, r.URL.Path, dst)
+				log.Printf("%s '%s' '%s'", r.Method, r.URL.Path, dst)
 			default:
-				log.Printf("%s %s", r.Method, r.URL.Path)
+				log.Printf("%s '%s'", r.Method, r.URL.Path)
 			}
 		},
 	}
@@ -79,6 +101,7 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 			username, password, ok := r.BasicAuth()
 			if !ok || username != user || password != pass {
 				w.Header().Set("WWW-Authenticate", `Basic realm="davfs"`)
+				log.Printf("Bad authorization for user='%s'\n", username)
 				http.Error(w, "authorization failed", http.StatusUnauthorized)
 				return
 			}
@@ -90,8 +113,19 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 	return handler, nil
 }
 
-func runServer(addr *string, handler http.Handler) {
-	http.Handle("/", handler)
+func runServer(addr *string, handler http.Handler) *http.Server {
 	log.Printf("Server will started %v", *addr)
-	log.Fatal(http.ListenAndServe(*addr, nil))
+
+	srv := &http.Server{Addr: *addr}
+	http.Handle("/", handler)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.Println("Server will stopped due fatal error")
+			log.Fatalf("ListenAndServe(): %s", err)
+		}
+		log.Println("Server stopped")
+	}()
+
+	return srv
 }
