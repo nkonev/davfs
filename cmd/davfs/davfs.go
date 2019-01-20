@@ -21,12 +21,17 @@ import (
 )
 
 func main() {
+	duration, e := time.ParseDuration("10s")
+	if e != nil {
+		panic("error during parsing duration")
+	}
 	var (
-		addr   = flag.String("addr", ":9999", "server address")
-		driver = flag.String("driver", "file", "database driver")
-		source = flag.String("source", ".", "database connection string")
-		cred   = flag.String("cred", "", "credential for basic auth")
-		create = flag.Bool("create", false, "create filesystem")
+		addr               = flag.String("addr", ":9999", "server address")
+		driver             = flag.String("driver", "file", "database driver")
+		source             = flag.String("source", ".", "database connection string")
+		cred               = flag.String("cred", "", "credential for basic auth")
+		create             = flag.Bool("create", false, "create filesystem")
+		forceShutdownAfter = flag.Duration("force-shutdown-after", duration, "After interrupt signal handled wait this time before forcibly shut down https server")
 	)
 	flag.Parse()
 
@@ -37,16 +42,14 @@ func main() {
 		srv = runServer(addr, handler)
 	}
 
-	shutdownTimeout, _ := time.ParseDuration("10s")
-
 	log.Println("Server started. Waiting for interrupt (2) (Ctrl+C)")
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 10 seconds.
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
-	log.Printf("Got signal %v - will forcibly close after %v\n", os.Interrupt, shutdownTimeout)
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	log.Printf("Got signal %v - will forcibly close after %v\n", os.Interrupt, forceShutdownAfter)
+	ctx, cancel := context.WithTimeout(context.Background(), *forceShutdownAfter)
 	defer cancel() // releases resources if slowOperation completes before timeout elapses
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal(err)
