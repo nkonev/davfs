@@ -48,6 +48,8 @@ var drivers = []testContext{
 	{"postgres", postgresSource},
 }
 
+var counter int = 0
+
 func TestMain(m *testing.M) {
 	setup()
 	retCode := m.Run()
@@ -183,12 +185,17 @@ func getUri() string {
 	return "http://localhost:" + port
 }
 
+func generateRandomName(prefix string) string {
+	counter++
+	return prefix + strconv.Itoa(counter) + "_" + strconv.FormatInt(time.Now().Unix(), 10)
+}
+
 func getTempDirName() string {
-	return "folder" + strconv.FormatInt(time.Now().Unix(), 10)
+	return generateRandomName("folder")
 }
 
 func getTempFileName() string {
-	return "file" + strconv.FormatInt(time.Now().Unix(), 10)
+	return generateRandomName("file")
 }
 
 func TestClientCreateDir(t *testing.T) {
