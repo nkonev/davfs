@@ -187,6 +187,10 @@ func getTempDirName() string {
 	return "folder" + strconv.FormatInt(time.Now().Unix(), 10)
 }
 
+func getTempFileName() string {
+	return "file" + strconv.FormatInt(time.Now().Unix(), 10)
+}
+
 func TestClientCreateDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
 		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
@@ -214,6 +218,49 @@ func TestClientCreateDir(t *testing.T) {
 			// secondary call doesn' create directory and fails
 			err := c.Mkdir(tempDir, 0644)
 			assert.NotNil(t, err, "Got error %v", err)
+		}
+
+		assert.Nil(t, srv.Shutdown(ctx))
+		cancel()
+	})
+}
+
+func TestClientCreateFileInExistsDir(t *testing.T) {
+	runOnAllDrivers(t, func(tc testContext) {
+		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
+
+		handler, e := createServer(&driver, &source, &cred, &create)
+		assert.Nil(t, e)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		srv := runServer(&addr, handler)
+
+		c := gowebdav.NewClient(getUri(), davUser, davPassword)
+		_ = c.Connect() // performs authorization
+
+		tempDir := getTempFileName()
+		data := []byte("hello world file")
+
+		var size1 int64
+		{
+			err := c.Write(tempDir, data, 0644)
+			assert.Nil(t, err, "Got error %v", err)
+
+			info, e2 := c.Stat(tempDir)
+			assert.Nil(t, e2)
+
+			assert.False(t, info.IsDir())
+			size1 = info.Size()
+		}
+		{
+			// secondary call doesn' create directory and fails
+			err := c.Write(tempDir, data, 0644)
+			assert.Nil(t, err, "Got error %v", err)
+
+			info, e2 := c.Stat(tempDir)
+			assert.Nil(t, e2)
+
+			assert.Equal(t, size1, info.Size())
 		}
 
 		assert.Nil(t, srv.Shutdown(ctx))
