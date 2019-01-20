@@ -33,6 +33,7 @@ const (
 	postgresSource      = "host=localhost port=35432 user=webdav password=password dbname=webdav connect_timeout=2 statement_timeout=2000 sslmode=disable"
 	postgresAdminSource = "host=localhost port=35432 user=postgres password=postgresqlPassword dbname=webdav connect_timeout=2 statement_timeout=2000 sslmode=disable"
 
+	port        = "9998"
 	davUser     = "user"
 	davPassword = "password"
 )
@@ -178,13 +179,16 @@ func TestGetCredSuccess(t *testing.T) {
 	})
 }
 
+func getUri() string {
+	return "http://localhost:" + port
+}
+
+func getTempDirName() string {
+	return "folder" + strconv.FormatInt(time.Now().Unix(), 10)
+}
+
 func TestClientCreateDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
-		port := "9998"
-
-		user := "user"
-		password := "password"
-
 		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
 
 		handler, e := createServer(&driver, &source, &cred, &create)
@@ -193,12 +197,10 @@ func TestClientCreateDir(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		srv := runServer(&addr, handler)
 
-		uri := "http://localhost:" + port
-
-		c := gowebdav.NewClient(uri, user, password)
+		c := gowebdav.NewClient(getUri(), davUser, davPassword)
 		_ = c.Connect() // performs authorization
 
-		tempDir := "folder" + strconv.FormatInt(time.Now().Unix(), 10)
+		tempDir := getTempDirName()
 
 		{
 			err := c.Mkdir(tempDir, 0644)
