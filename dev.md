@@ -11,3 +11,7 @@ env GOCACHE=off go test ./...
 ```bash
 go test -run TestGetCredSuccess ./cmd/davfs/ -v
 ```
+
+```bash
+go test ./... -cover
+```
