@@ -18,7 +18,7 @@ import (
 )
 
 const createSQL = `
-create table filesystem(
+create table if not exists filesystem(
 	name text not null,
 	content text not null,
 	mode bigint not null,
@@ -26,7 +26,7 @@ create table filesystem(
 	primary key (name)
 );
 
-insert into filesystem(name, content, mode, mod_time) values('/', '', 2147484159, current_timestamp);
+insert into filesystem(name, content, mode, mod_time) values('/', '', 2147484159, current_timestamp) on conflict DO NOTHING;
 `
 
 func init() {
@@ -108,10 +108,10 @@ func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.Fi
 	}
 
 	_, err = fs.stat(name)
-	if err == os.ErrNotExist {
-		return err
+	if err == nil {
+		return os.ErrExist
 	}
-	if err != nil {
+	if err != nil && err != os.ErrNotExist {
 		log.Printf("Unexpected error during mkdir: %v\n", err)
 		return err
 	}

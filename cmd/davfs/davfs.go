@@ -69,7 +69,6 @@ func createServer(driver, source, cred *string, create *bool) (http.Handler, err
 		if err != nil {
 			log.Fatal(err)
 		}
-		os.Exit(0)
 	}
 	fs, err := davfs.NewFS(*driver, *source)
 	if err != nil {

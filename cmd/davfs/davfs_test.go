@@ -2,17 +2,22 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/nkonev/gowebdav"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"log"
 	test "net/http/httptest"
+	"os"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
-	create = false
+	create = true
 	body   = `
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:"><prop>
@@ -24,6 +29,12 @@ const (
 </prop></propfind>
 `
 	authHeader = "Basic dXNlcjpwYXNzd29yZA=="
+
+	postgresSource      = "host=localhost port=35432 user=webdav password=password dbname=webdav connect_timeout=2 statement_timeout=2000 sslmode=disable"
+	postgresAdminSource = "host=localhost port=35432 user=postgres password=postgresqlPassword dbname=webdav connect_timeout=2 statement_timeout=2000 sslmode=disable"
+
+	davUser     = "user"
+	davPassword = "password"
 )
 
 type testContext struct {
@@ -33,7 +44,52 @@ type testContext struct {
 
 var drivers = []testContext{
 	{"memory", ""},
-	{"postgres", "host=localhost port=35432 user=webdav password=password dbname=webdav connect_timeout=2 statement_timeout=2000 sslmode=disable"},
+	{"postgres", postgresSource},
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	retCode := m.Run()
+	shutdown()
+	os.Exit(retCode)
+}
+
+func setup() {
+	const str = `
+	DROP SCHEMA IF EXISTS public CASCADE;
+    CREATE SCHEMA public;
+
+    GRANT ALL ON SCHEMA public TO webdav;
+    GRANT ALL ON SCHEMA public TO public;
+
+    COMMENT ON SCHEMA public IS 'standard public schema';
+`
+	db, err := sql.Open("postgres", postgresAdminSource)
+	if err != nil {
+		log.Panicf("Got error in setup: %v", err)
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Panicf("Got error in setup: %v", err)
+	}
+
+	_, err2 := tx.Exec(str)
+	if err2 != nil {
+		log.Panicf("Got error in setup: %v", err2)
+	}
+
+	if err3 := tx.Commit(); err3 != nil {
+		log.Panicf("Got error in setup: %v", err3)
+	}
+}
+
+func shutdown() {
+
+}
+
+func authArgument() string {
+	return davUser + ":" + davPassword
 }
 
 func runOnAllDrivers(t *testing.T, testCase func(tc testContext)) {
@@ -47,7 +103,7 @@ func runOnAllDrivers(t *testing.T, testCase func(tc testContext)) {
 func TestGetCredFailedWithoutCredentials(t *testing.T) {
 
 	runOnAllDrivers(t, func(tc testContext) {
-		driver, source, cred, create := tc.driverName, tc.source, "user:password", create
+		driver, source, cred, create := tc.driverName, tc.source, authArgument(), create
 
 		handler, e := createServer(&driver, &source, &cred, &create)
 		assert.Nil(t, e)
@@ -98,7 +154,7 @@ func TestGetCredFailedBadCredentials(t *testing.T) {
 func TestGetCredSuccess(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
 
-		driver, source, cred, create := tc.driverName, tc.source, "user:password", create
+		driver, source, cred, create := tc.driverName, tc.source, authArgument(), create
 
 		handler, e := createServer(&driver, &source, &cred, &create)
 		assert.Nil(t, e)
@@ -124,29 +180,41 @@ func TestGetCredSuccess(t *testing.T) {
 
 func TestClientCreateDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
-		for i := 0; i < 10; i++ {
-			port := "9998"
+		port := "9998"
 
-			user := "user"
-			password := "password"
+		user := "user"
+		password := "password"
 
-			driver, source, cred, create, addr := tc.driverName, tc.source, user+":"+password, create, ":"+port
+		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
 
-			handler, e := createServer(&driver, &source, &cred, &create)
-			assert.Nil(t, e)
+		handler, e := createServer(&driver, &source, &cred, &create)
+		assert.Nil(t, e)
 
-			ctx, cancel := context.WithCancel(context.Background())
-			srv := runServer(&addr, handler)
+		ctx, cancel := context.WithCancel(context.Background())
+		srv := runServer(&addr, handler)
 
-			uri := "http://localhost:" + port
+		uri := "http://localhost:" + port
 
-			c := gowebdav.NewClient(uri, user, password)
-			_ = c.Connect() // performs authorization
-			err := c.Mkdir("folder", 0644)
+		c := gowebdav.NewClient(uri, user, password)
+		_ = c.Connect() // performs authorization
+
+		tempDir := "folder" + strconv.FormatInt(time.Now().Unix(), 10)
+
+		{
+			err := c.Mkdir(tempDir, 0644)
 			assert.Nil(t, err, "Got error %v", err)
 
-			srv.Shutdown(ctx)
-			cancel()
+			info, e2 := c.Stat(tempDir)
+			assert.True(t, info.IsDir())
+			assert.Nil(t, e2)
 		}
+		{
+			// secondary call doesn' create directory and fails
+			err := c.Mkdir(tempDir, 0644)
+			assert.NotNil(t, err, "Got error %v", err)
+		}
+
+		assert.Nil(t, srv.Shutdown(ctx))
+		cancel()
 	})
 }
