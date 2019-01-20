@@ -7,6 +7,7 @@ import (
 	"github.com/studio-b12/gowebdav"
 	"io/ioutil"
 	test "net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
@@ -33,6 +34,7 @@ type testContext struct {
 
 var drivers = []testContext{
 	{"memory", ""},
+	{"postgres", "host=localhost port=35432 user=webdav password=password dbname=webdav connect_timeout=2 statement_timeout=2000 sslmode=disable"},
 }
 
 func runOnAllDrivers(t *testing.T, testCase func(tc testContext)) {
@@ -123,7 +125,7 @@ func TestGetCredSuccess(t *testing.T) {
 
 func TestClientCreateDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 10; i++ {
 			port := "9998"
 
 			user := "user"
@@ -140,7 +142,12 @@ func TestClientCreateDir(t *testing.T) {
 			uri := "http://localhost:" + port
 
 			c := gowebdav.NewClient(uri, user, password)
-			_ = c.Connect() // performs authorization
+			connError := c.Connect() // performs authorization
+			pathError, ok := connError.(*os.PathError)
+			assert.True(t, ok)
+			fmt.Printf("Got connect error: %T %v %v %T \n", connError, connError, pathError, pathError.Err)
+			assert.Equal(t, "Authorize", pathError.Op)
+			assert.Equal(t, "401", pathError.Err.Error())
 			err := c.Mkdir("folder", 0644)
 			assert.Nil(t, err, "Got error %v", err)
 

@@ -26,10 +26,11 @@ func main() {
 		panic("error during parsing duration")
 	}
 	var (
-		addr               = flag.String("addr", ":9999", "server address")
-		driver             = flag.String("driver", "file", "database driver")
-		source             = flag.String("source", ".", "database connection string")
-		cred               = flag.String("cred", "", "credential for basic auth")
+		addr   = flag.String("addr", ":9999", "server address")
+		driver = flag.String("driver", "file", "database driver")
+		source = flag.String("source", ".", "database connection string")
+		cred   = flag.String("cred", "", "credential for basic auth")
+		// todo deprecated
 		create             = flag.Bool("create", false, "create filesystem")
 		forceShutdownAfter = flag.Duration("force-shutdown-after", duration, "After interrupt signal handled wait this time before forcibly shut down https server")
 	)

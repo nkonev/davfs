@@ -39,7 +39,7 @@ type Driver struct {
 type PostgresFileSystem struct {
 	db    *sql.DB
 	mu    sync.Mutex
-	Debug bool
+	Debug bool // todo deprecated
 }
 
 type FileInfo struct {
@@ -94,7 +94,7 @@ func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.Fi
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("PostgresFileSystem.Mkdir %v", name)
+		log.Printf("PostgresFileSystem.Mkdir %v\n", name)
 	}
 
 	if !strings.HasSuffix(name, "/") {
@@ -103,12 +103,17 @@ func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.Fi
 
 	var err error
 	if name, err = clearName(name); err != nil {
+		log.Printf("Unexpected error during mkdir: %v\n", err)
 		return err
 	}
 
 	_, err = fs.stat(name)
-	if err == nil {
-		return os.ErrExist
+	if err == os.ErrNotExist {
+		return err
+	}
+	if err != nil {
+		log.Printf("Unexpected error during mkdir: %v\n", err)
+		return err
 	}
 
 	base := "/"
@@ -116,10 +121,12 @@ func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.Fi
 		base += elem + "/"
 		_, err = fs.stat(base)
 		if err != os.ErrNotExist {
+			log.Printf("Unexpected error during mkdir: %v\n", err)
 			return err
 		}
 		_, err = fs.db.Exec(`insert into filesystem(name, content, mode, mod_time) values($1, '', $2, current_timestamp)`, base, perm.Perm()|os.ModeDir)
 		if err != nil {
+			log.Printf("Unexpected error during mkdir: %v\n", err)
 			return err
 		}
 	}
@@ -131,7 +138,7 @@ func (fs *PostgresFileSystem) OpenFile(ctx context.Context, name string, flag in
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("PostgresFileSystem.OpenFile %v", name)
+		log.Printf("PostgresFileSystem.OpenFile %v\n", name)
 	}
 
 	var err error
@@ -198,7 +205,7 @@ func (fs *PostgresFileSystem) RemoveAll(ctx context.Context, name string) error 
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("PostgresFileSystem.RemoveAll %v", name)
+		log.Printf("PostgresFileSystem.RemoveAll %v\n", name)
 	}
 
 	return fs.removeAll(name)
@@ -209,7 +216,7 @@ func (fs *PostgresFileSystem) Rename(ctx context.Context, oldName, newName strin
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("PostgresFileSystem.Rename %v %v", oldName, newName)
+		log.Printf("PostgresFileSystem.Rename %v %v\n", oldName, newName)
 	}
 
 	var err error
@@ -281,7 +288,7 @@ func (fs *PostgresFileSystem) Stat(ctx context.Context, name string) (os.FileInf
 	defer fs.mu.Unlock()
 
 	if fs.Debug {
-		log.Printf("PostgresFileSystem.Stat %v", name)
+		log.Printf("PostgresFileSystem.Stat %v\n", name)
 	}
 
 	return fs.stat(name)
@@ -299,7 +306,7 @@ func (f *File) Write(p []byte) (int, error) {
 	defer f.fs.mu.Unlock()
 
 	if f.fs.Debug {
-		log.Printf("File.Write %v", f.name)
+		log.Printf("File.Write %v\n", f.name)
 	}
 	_, err := f.fs.db.Exec(`update filesystem set content = substr(content, 1, $1) || $2 where name = $3`, f.off*2, hex.EncodeToString(p), f.name)
 	if err != nil {
@@ -311,7 +318,7 @@ func (f *File) Write(p []byte) (int, error) {
 
 func (f *File) Close() error {
 	if f.fs.Debug {
-		log.Printf("File.Close %v", f.name)
+		log.Printf("File.Close %v\n", f.name)
 	}
 
 	return nil
@@ -322,7 +329,7 @@ func (f *File) Read(p []byte) (int, error) {
 	defer f.fs.mu.Unlock()
 
 	if f.fs.Debug {
-		log.Printf("File.Read %v", f.name)
+		log.Printf("File.Read %v\n", f.name)
 	}
 
 	rows, err := f.fs.db.Query(`select mode, substr(content, $1, $2) from filesystem where name = $3`, 1+f.off*2, len(p)*2, f.name)
@@ -361,7 +368,7 @@ func (f *File) Readdir(count int) ([]os.FileInfo, error) {
 	defer f.fs.mu.Unlock()
 
 	if f.fs.Debug {
-		log.Printf("File.Readdir %v", f.name)
+		log.Printf("File.Readdir %v\n", f.name)
 	}
 
 	if f.children == nil {
@@ -414,7 +421,7 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 	defer f.fs.mu.Unlock()
 
 	if f.fs.Debug {
-		log.Printf("File.Seek %v %v %v", f.name, offset, whence)
+		log.Printf("File.Seek %v %v %v\n", f.name, offset, whence)
 	}
 
 	var err error
@@ -437,7 +444,7 @@ func (f *File) Stat() (os.FileInfo, error) {
 	defer f.fs.mu.Unlock()
 
 	if f.fs.Debug {
-		log.Printf("File.Stat %v", f.name)
+		log.Printf("File.Stat %v\n", f.name)
 	}
 
 	return f.fs.stat(f.name)
