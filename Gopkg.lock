@@ -37,6 +37,13 @@
   version = "v1.10.0"
 
 [[projects]]
+  digest = "1:e002520f6e39d8ed6e079795d8affcaf26c08bff23124fa99a61c88172b9a3f0"
+  name = "github.com/nkonev/gowebdav"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "236ea084a1b9b8925f7329f67c50d7567a06ffd2"
+
+[[projects]]
   digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
   name = "github.com/pmezard/go-difflib"
   packages = ["difflib"]
@@ -51,14 +58,6 @@
   pruneopts = "UT"
   revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
   version = "v1.3.0"
-
-[[projects]]
-  digest = "1:53a5a62f0d82da9d3297b918a5ccf7c40b5d3f3e7ea4a178c69730fc3ab6b85d"
-  name = "github.com/studio-b12/gowebdav"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a33240e4ab5b60f5295e83245a32c51d14ef8122"
-  version = "6"
 
 [[projects]]
   branch = "master"
@@ -87,8 +86,8 @@
     "github.com/go-sql-driver/mysql",
     "github.com/lib/pq",
     "github.com/mattn/go-sqlite3",
+    "github.com/nkonev/gowebdav",
     "github.com/stretchr/testify/assert",
-    "github.com/studio-b12/gowebdav",
     "golang.org/x/net/context",
     "golang.org/x/net/webdav",
   ]

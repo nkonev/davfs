@@ -46,5 +46,5 @@
   unused-packages = true
 
 [[constraint]]
-  name = "github.com/studio-b12/gowebdav"
-  version = "6.0.0"
+  name = "github.com/nkonev/gowebdav"
+  revision = "236ea084a1b9b8925f7329f67c50d7567a06ffd2"
