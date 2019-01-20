@@ -14,7 +14,6 @@ import (
 const (
 	driver = "memory"
 	source = "."
-	cred   = ""
 	create = false
 	body   = `
 <?xml version="1.0" encoding="utf-8"?>
