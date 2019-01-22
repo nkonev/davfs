@@ -10,8 +10,8 @@ import (
 	_ "github.com/nkonev/davfs/plugin/mysql"
 	_ "github.com/nkonev/davfs/plugin/postgres"
 	_ "github.com/nkonev/davfs/plugin/sqlite3"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -33,8 +33,31 @@ func main() {
 		// todo deprecated
 		create             = flag.Bool("create", false, "create filesystem")
 		forceShutdownAfter = flag.Duration("force-shutdown-after", duration, "After interrupt signal handled wait this time before forcibly shut down https server")
+		level              = flag.String("log-level", "INFO", "Might be TRACE, DEBUG, INFO, WARN, ERROR, FATAL")
+		forceColors        = flag.Bool("force-colors", false, "Should force colors")
 	)
 	flag.Parse()
+
+	log.SetReportCaller(true)
+	formatter := log.TextFormatter{DisableLevelTruncation: true, ForceColors: *forceColors, FullTimestamp: true}
+	log.SetFormatter(&formatter)
+	log.SetOutput(os.Stdout)
+	switch *level {
+	case "TRACE":
+		log.SetLevel(log.TraceLevel)
+	case "DEBUG":
+		log.SetLevel(log.DebugLevel)
+	case "INFO":
+		log.SetLevel(log.InfoLevel)
+	case "WARN":
+		log.SetLevel(log.WarnLevel)
+	case "ERROR":
+		log.SetLevel(log.ErrorLevel)
+	case "FATAL":
+		log.SetLevel(log.FatalLevel)
+	default:
+		log.SetLevel(log.InfoLevel)
+	}
 
 	var srv *http.Server
 	if handler, e := createServer(driver, source, cred, create); e != nil {

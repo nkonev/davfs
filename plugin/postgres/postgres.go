@@ -3,8 +3,8 @@ package postgres
 import (
 	"database/sql"
 	"encoding/hex"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -37,9 +37,8 @@ type Driver struct {
 }
 
 type PostgresFileSystem struct {
-	db    *sql.DB
-	mu    sync.Mutex
-	Debug bool // todo deprecated
+	db *sql.DB
+	mu sync.Mutex
 }
 
 type FileInfo struct {
@@ -93,9 +92,7 @@ func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.Fi
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if fs.Debug {
-		log.Printf("PostgresFileSystem.Mkdir %v\n", name)
-	}
+	log.Debugf("PostgresFileSystem.Mkdir %v\n", name)
 
 	if !strings.HasSuffix(name, "/") {
 		name += "/"
@@ -137,9 +134,7 @@ func (fs *PostgresFileSystem) OpenFile(ctx context.Context, name string, flag in
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if fs.Debug {
-		log.Printf("PostgresFileSystem.OpenFile %v\n", name)
-	}
+	log.Debugf("PostgresFileSystem.OpenFile %v\n", name)
 
 	var err error
 	if name, err = clearName(name); err != nil {
@@ -204,9 +199,7 @@ func (fs *PostgresFileSystem) RemoveAll(ctx context.Context, name string) error 
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if fs.Debug {
-		log.Printf("PostgresFileSystem.RemoveAll %v\n", name)
-	}
+	log.Debugf("PostgresFileSystem.RemoveAll %v\n", name)
 
 	return fs.removeAll(name)
 }
@@ -215,9 +208,7 @@ func (fs *PostgresFileSystem) Rename(ctx context.Context, oldName, newName strin
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if fs.Debug {
-		log.Printf("PostgresFileSystem.Rename %v %v\n", oldName, newName)
-	}
+	log.Debugf("PostgresFileSystem.Rename %v %v\n", oldName, newName)
 
 	var err error
 	if oldName, err = clearName(oldName); err != nil {
@@ -287,9 +278,7 @@ func (fs *PostgresFileSystem) Stat(ctx context.Context, name string) (os.FileInf
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	if fs.Debug {
-		log.Printf("PostgresFileSystem.Stat %v\n", name)
-	}
+	log.Debugf("PostgresFileSystem.Stat %v\n", name)
 
 	return fs.stat(name)
 }
@@ -305,9 +294,8 @@ func (f *File) Write(p []byte) (int, error) {
 	f.fs.mu.Lock()
 	defer f.fs.mu.Unlock()
 
-	if f.fs.Debug {
-		log.Printf("File.Write %v\n", f.name)
-	}
+	log.Debugf("File.Write %v\n", f.name)
+
 	_, err := f.fs.db.Exec(`update filesystem set content = substr(content, 1, $1) || $2 where name = $3`, f.off*2, hex.EncodeToString(p), f.name)
 	if err != nil {
 		return 0, err
@@ -317,9 +305,7 @@ func (f *File) Write(p []byte) (int, error) {
 }
 
 func (f *File) Close() error {
-	if f.fs.Debug {
-		log.Printf("File.Close %v\n", f.name)
-	}
+	log.Debugf("File.Close %v\n", f.name)
 
 	return nil
 }
@@ -328,9 +314,7 @@ func (f *File) Read(p []byte) (int, error) {
 	f.fs.mu.Lock()
 	defer f.fs.mu.Unlock()
 
-	if f.fs.Debug {
-		log.Printf("File.Read %v\n", f.name)
-	}
+	log.Debugf("File.Read %v\n", f.name)
 
 	rows, err := f.fs.db.Query(`select mode, substr(content, $1, $2) from filesystem where name = $3`, 1+f.off*2, len(p)*2, f.name)
 	if err != nil {
@@ -367,9 +351,7 @@ func (f *File) Readdir(count int) ([]os.FileInfo, error) {
 	f.fs.mu.Lock()
 	defer f.fs.mu.Unlock()
 
-	if f.fs.Debug {
-		log.Printf("File.Readdir %v\n", f.name)
-	}
+	log.Debugf("File.Readdir %v\n", f.name)
 
 	if f.children == nil {
 		rows, err := f.fs.db.Query(`select name from filesystem where name <> $1 and name like $2 escape '\'`, f.name, strings.Replace(f.name, `%`, `\%`, -1)+"%")
@@ -420,9 +402,7 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 	f.fs.mu.Lock()
 	defer f.fs.mu.Unlock()
 
-	if f.fs.Debug {
-		log.Printf("File.Seek %v %v %v\n", f.name, offset, whence)
-	}
+	log.Debugf("File.Seek %v %v %v\n", f.name, offset, whence)
 
 	var err error
 	switch whence {
@@ -443,9 +423,7 @@ func (f *File) Stat() (os.FileInfo, error) {
 	f.fs.mu.Lock()
 	defer f.fs.mu.Unlock()
 
-	if f.fs.Debug {
-		log.Printf("File.Stat %v\n", f.name)
-	}
+	log.Debugf("File.Stat %v\n", f.name)
 
 	return f.fs.stat(f.name)
 }
