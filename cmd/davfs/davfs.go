@@ -12,6 +12,7 @@ import (
 	_ "github.com/nkonev/davfs/plugin/sqlite3"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/webdav"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -35,13 +36,26 @@ func main() {
 		forceShutdownAfter = flag.Duration("force-shutdown-after", duration, "After interrupt signal handled wait this time before forcibly shut down https server")
 		level              = flag.String("log-level", "INFO", "Might be TRACE, DEBUG, INFO, WARN, ERROR, FATAL")
 		forceColors        = flag.Bool("force-colors", false, "Should force colors")
+		logFile            = flag.String("log-file", "", "Path to logging file. If omitted - then will log to stdout")
 	)
 	flag.Parse()
 
 	log.SetReportCaller(true)
 	formatter := log.TextFormatter{DisableLevelTruncation: true, ForceColors: *forceColors, FullTimestamp: true}
 	log.SetFormatter(&formatter)
-	log.SetOutput(os.Stdout)
+
+	if *logFile != "" {
+		log.SetOutput(&lumberjack.Logger{
+			Filename:   *logFile,
+			MaxSize:    20, // megabytes
+			MaxBackups: 3,
+			MaxAge:     10,   //days
+			Compress:   true, // disabled by default
+		})
+	} else {
+		log.SetOutput(os.Stdout)
+	}
+
 	switch *level {
 	case "TRACE":
 		log.SetLevel(log.TraceLevel)
@@ -84,8 +98,6 @@ func main() {
 }
 
 func createServer(driver, source, cred *string, create *bool) (http.Handler, error) {
-
-	log.SetOutput(os.Stdout)
 
 	if *create {
 		err := davfs.CreateFS(*driver, *source)
