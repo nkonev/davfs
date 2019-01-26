@@ -25,12 +25,10 @@ func main() {
 		panic("error during parsing duration")
 	}
 	var (
-		addr   = flag.String("addr", ":9999", "server address")
-		driver = flag.String("driver", "file", "database driver")
-		source = flag.String("source", ".", "database connection string")
-		cred   = flag.String("cred", "", "credential for basic auth")
-		// todo deprecated
-		create             = flag.Bool("create", false, "create filesystem")
+		addr               = flag.String("addr", ":9999", "server address")
+		driver             = flag.String("driver", "file", "database driver")
+		source             = flag.String("source", ".", "database connection string")
+		cred               = flag.String("cred", "", "credential for basic auth")
 		forceShutdownAfter = flag.Duration("force-shutdown-after", duration, "After interrupt signal handled wait this time before forcibly shut down https server")
 		level              = flag.String("log-level", "INFO", "Might be TRACE, DEBUG, INFO, WARN, ERROR, FATAL")
 		forceColors        = flag.Bool("force-colors", false, "Should force colors")
@@ -72,7 +70,7 @@ func main() {
 	}
 
 	var srv *http.Server
-	if handler, e := createServer(driver, source, cred, create); e != nil {
+	if handler, e := createServer(driver, source, cred); e != nil {
 		panic(e)
 	} else {
 		srv = runServer(addr, handler)
@@ -95,13 +93,11 @@ func main() {
 
 }
 
-func createServer(driver, source, cred *string, create *bool) (http.Handler, error) {
+func createServer(driver, source, cred *string) (http.Handler, error) {
 
-	if *create {
-		err := davfs.CreateFS(*driver, *source)
-		if err != nil {
-			log.Fatal(err)
-		}
+	err := davfs.CreateFS(*driver, *source)
+	if err != nil {
+		log.Fatal(err)
 	}
 	fs, err := davfs.NewFS(*driver, *source)
 	if err != nil {

@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	create = true
-	body   = `
+	body = `
 <?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:"><prop>
 <resourcetype xmlns="DAV:"/>
@@ -106,9 +105,9 @@ func runOnAllDrivers(t *testing.T, testCase func(tc testContext)) {
 func TestGetCredFailedWithoutCredentials(t *testing.T) {
 
 	runOnAllDrivers(t, func(tc testContext) {
-		driver, source, cred, create := tc.driverName, tc.source, authArgument(), create
+		driver, source, cred := tc.driverName, tc.source, authArgument()
 
-		handler, e := createServer(&driver, &source, &cred, &create)
+		handler, e := createServer(&driver, &source, &cred)
 		assert.Nil(t, e)
 
 		req := test.NewRequest("PROPFIND", "/", strings.NewReader(body))
@@ -130,9 +129,9 @@ func TestGetCredFailedWithoutCredentials(t *testing.T) {
 func TestGetCredFailedBadCredentials(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
 
-		driver, source, cred, create := tc.driverName, tc.source, "user:password2", create
+		driver, source, cred := tc.driverName, tc.source, "user:password2"
 
-		handler, e := createServer(&driver, &source, &cred, &create)
+		handler, e := createServer(&driver, &source, &cred)
 		assert.Nil(t, e)
 
 		req := test.NewRequest("PROPFIND", "/", strings.NewReader(body))
@@ -157,9 +156,9 @@ func TestGetCredFailedBadCredentials(t *testing.T) {
 func TestGetCredSuccess(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
 
-		driver, source, cred, create := tc.driverName, tc.source, authArgument(), create
+		driver, source, cred := tc.driverName, tc.source, authArgument()
 
-		handler, e := createServer(&driver, &source, &cred, &create)
+		handler, e := createServer(&driver, &source, &cred)
 		assert.Nil(t, e)
 
 		req := test.NewRequest("PROPFIND", "/", strings.NewReader(body))
@@ -200,9 +199,9 @@ func getTempFileName() string {
 
 func TestClientCreateDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
-		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
+		driver, source, cred, addr := tc.driverName, tc.source, authArgument(), ":"+port
 
-		handler, e := createServer(&driver, &source, &cred, &create)
+		handler, e := createServer(&driver, &source, &cred)
 		assert.Nil(t, e)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -234,9 +233,9 @@ func TestClientCreateDir(t *testing.T) {
 
 func TestClientCreateFileInExistsDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
-		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
+		driver, source, cred, addr := tc.driverName, tc.source, authArgument(), ":"+port
 
-		handler, e := createServer(&driver, &source, &cred, &create)
+		handler, e := createServer(&driver, &source, &cred)
 		assert.Nil(t, e)
 
 		ctx, cancel := context.WithCancel(context.Background())
@@ -277,9 +276,9 @@ func TestClientCreateFileInExistsDir(t *testing.T) {
 
 func TestClientCreateFileInNonExistsDir(t *testing.T) {
 	runOnAllDrivers(t, func(tc testContext) {
-		driver, source, cred, create, addr := tc.driverName, tc.source, authArgument(), create, ":"+port
+		driver, source, cred, addr := tc.driverName, tc.source, authArgument(), ":"+port
 
-		handler, e := createServer(&driver, &source, &cred, &create)
+		handler, e := createServer(&driver, &source, &cred)
 		assert.Nil(t, e)
 
 		ctx, cancel := context.WithCancel(context.Background())

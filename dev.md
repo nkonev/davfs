@@ -19,8 +19,6 @@ go test ./... -cover
 # TODO
 * use postgres locks instead mutex
 * cover remaining basic operations
-* consider remove sqlite
 * write database authentication with md5, jbcrypt
 * use postgres large object api
 * sqlx
-* cover remaining databases

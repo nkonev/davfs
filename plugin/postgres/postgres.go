@@ -18,12 +18,11 @@ import (
 )
 
 const createSQL = `
-create table if not exists filesystem(
-	name text not null,
-	content text not null,
-	mode bigint not null,
-	mod_time timestamp not null,
-	primary key (name)
+CREATE TABLE IF NOT EXISTS filesystem(
+	name TEXT NOT NULL PRIMARY KEY,
+	content TEXT NOT NULL,
+	mode BIGINT NOT NULL,
+	mod_time TIMESTAMP NOT NULL
 );
 
 insert into filesystem(name, content, mode, mod_time) values('/', '', 2147484159, current_timestamp) on conflict DO NOTHING;
