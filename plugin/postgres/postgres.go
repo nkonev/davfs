@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -37,7 +36,6 @@ type Driver struct {
 
 type PostgresFileSystem struct {
 	db *sql.DB
-	mu sync.Mutex
 }
 
 type FileInfo struct {
@@ -88,8 +86,6 @@ func clearName(name string) (string, error) {
 }
 
 func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.FileMode) error {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
 
 	log.Debugf("PostgresFileSystem.Mkdir %v\n", name)
 
@@ -130,8 +126,6 @@ func (fs *PostgresFileSystem) Mkdir(ctx context.Context, name string, perm os.Fi
 }
 
 func (fs *PostgresFileSystem) OpenFile(ctx context.Context, name string, flag int, perm os.FileMode) (webdav.File, error) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
 
 	log.Debugf("PostgresFileSystem.OpenFile %v\n", name)
 
@@ -195,8 +189,6 @@ func (fs *PostgresFileSystem) removeAll(name string) error {
 }
 
 func (fs *PostgresFileSystem) RemoveAll(ctx context.Context, name string) error {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
 
 	log.Debugf("PostgresFileSystem.RemoveAll %v\n", name)
 
@@ -204,8 +196,6 @@ func (fs *PostgresFileSystem) RemoveAll(ctx context.Context, name string) error 
 }
 
 func (fs *PostgresFileSystem) Rename(ctx context.Context, oldName, newName string) error {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
 
 	log.Debugf("PostgresFileSystem.Rename %v %v\n", oldName, newName)
 
@@ -274,8 +264,6 @@ func (fs *PostgresFileSystem) stat(name string) (os.FileInfo, error) {
 }
 
 func (fs *PostgresFileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error) {
-	fs.mu.Lock()
-	defer fs.mu.Unlock()
 
 	log.Debugf("PostgresFileSystem.Stat %v\n", name)
 
@@ -290,8 +278,6 @@ func (fi *FileInfo) IsDir() bool        { return fi.mode.IsDir() }
 func (fi *FileInfo) Sys() interface{}   { return nil }
 
 func (f *File) Write(p []byte) (int, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
 
 	log.Debugf("File.Write %v\n", f.name)
 
@@ -310,8 +296,6 @@ func (f *File) Close() error {
 }
 
 func (f *File) Read(p []byte) (int, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
 
 	log.Debugf("File.Read %v\n", f.name)
 
@@ -347,8 +331,6 @@ func (f *File) Read(p []byte) (int, error) {
 }
 
 func (f *File) Readdir(count int) ([]os.FileInfo, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
 
 	log.Debugf("File.Readdir %v\n", f.name)
 
@@ -398,8 +380,6 @@ func (f *File) Readdir(count int) ([]os.FileInfo, error) {
 }
 
 func (f *File) Seek(offset int64, whence int) (int64, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
 
 	log.Debugf("File.Seek %v %v %v\n", f.name, offset, whence)
 
@@ -419,8 +399,6 @@ func (f *File) Seek(offset int64, whence int) (int64, error) {
 }
 
 func (f *File) Stat() (os.FileInfo, error) {
-	f.fs.mu.Lock()
-	defer f.fs.mu.Unlock()
 
 	log.Debugf("File.Stat %v\n", f.name)
 
