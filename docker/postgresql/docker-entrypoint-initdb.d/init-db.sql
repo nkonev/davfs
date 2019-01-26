@@ -10,7 +10,7 @@ ALTER SYSTEM SET commit_siblings=10;
 CREATE USER webdav WITH PASSWORD 'password';
 CREATE DATABASE webdav WITH OWNER webdav;
 
-alter schema public owner to webdav;
+ALTER SCHEMA public OWNER TO webdav;
 
 \connect webdav;
 
